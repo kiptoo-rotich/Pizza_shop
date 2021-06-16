@@ -1,4 +1,5 @@
 from . import db
+from werkzeug.security import generate_password_hash,check_password_hash
 
 class User(db.Model):
     '''
@@ -11,6 +12,7 @@ class User(db.Model):
     location=db.Column(db.String(255))
     shopping=db.relationship('Shopping',backref="shoppings",lazy="dynamic")
     order=db.relationship('Order',backref="orders" ,lazy="dynamic")
+    
 class Order(db.Model):
     '''
     '''
