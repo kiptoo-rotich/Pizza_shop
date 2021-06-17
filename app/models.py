@@ -1,17 +1,38 @@
 from . import db
+from . import login_manager
+from datetime import datetime
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash,check_password_hash
 
-class User(db.Model):
+class User(UserMixin,db.Model):
     '''
     '''
     __tablename__="user"
     id=db.Column(db.Integer, primary_key=True)
     username=db.Column(db.String(255))
     email=db.Column(db.String(255))
-    password=db.Column(db.String(255))
+    password_secure=db.Column(db.String(255))
     location=db.Column(db.String(255))
     shopping=db.relationship('Shopping',backref="shoppings",lazy="dynamic")
     order=db.relationship('Order',backref="orders" ,lazy="dynamic")
+
+    @property
+    def password(self):
+        raise AttributeError('You cannot read the password atribute')
+
+    @password.setter
+    def password(self, password):
+        self.password_secure = generate_password_hash(password)
+    
+    def verify_password(self,password):
+        self.check_password_hash(self.password_secure,password)
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
+    def __repr__(self):
+        return f'{self.username}'
     
 class Order(db.Model):
     '''
@@ -19,7 +40,7 @@ class Order(db.Model):
     __tablename__="order"
     id=db.Column(db.Integer, primary_key=True)
     user_id=db.Column(db.Integer,db.ForeignKey("user.id"))
-    shopping=db.relatioship("Shopping",backref="shopping",lazy="dynamic")
+    shopping=db.relationship("Shopping",backref="shopping",lazy="dynamic")
     order_date=db.Column(db.DateTime,default=datetime.utcnow)
     total_cost=db.Column(db.Integer())
     def save_order(self):
@@ -37,13 +58,14 @@ class Order(db.Model):
         return single_order
     def __repr__(self):
         return f'{self.user_id}:{self.order_id}'
+    
 class Shopping(db.Model):
     '''
     '''
-    __tablenmae__="shoping"
+    __tablename__="shopping"
     id=db.Column(db.Integer,primary_key=True)
-    user_id=db.Column(db.Integer,ForeignKey("user.id"))
-    order_id=db.Column(db.Integer,ForeignKey("order.id"))
+    user_id=db.Column(db.Integer,db.ForeignKey("user.id"))
+    order_id=db.Column(db.Integer,db.ForeignKey("order.id"))
     pizza_category=db.Column(db.String(255))
     topping_category=db.Column(db.String(255))
     quantity=db.Column(db.Integer())
